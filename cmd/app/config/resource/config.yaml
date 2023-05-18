@@ -1,0 +1,12 @@
+# Установите false, чтобы отключить прокси
+UseProxy: false
+# SOCKS5 прокси
+# Формат: login:pass@ip:port
+# Формат: ip:port
+Proxy:
+# Сайт для проверки работоспособности прокси
+# Пример: google.com:443
+TestProxySite: google.com:443
+
+NymClient:
+  Host: ws://127.0.0.1:1977
