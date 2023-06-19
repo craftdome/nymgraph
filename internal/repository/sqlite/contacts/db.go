@@ -40,12 +40,13 @@ func (r *Repo) Create(dto CreateDTO) (*entity.Contact, error) {
 
 func (r *Repo) Update(dto UpdateDTO) (*entity.Contact, error) {
 	q := `UPDATE contacts 
-		SET alias = $1 
-		WHERE id = $2 
+		SET address = $1, alias = $2 
+		WHERE id = $3 
 		RETURNING id, pseudonym_id, address, alias;`
 
 	result := new(Entity)
 	err := r.client.QueryRow(q,
+		dto.Address,
 		dto.Alias,
 		dto.ID,
 	).Scan(
@@ -106,12 +107,13 @@ func (r *Repo) Get(dto GetDTO) (*entity.Contact, error) {
 	return result.ToDomain(), nil
 }
 
-func (r *Repo) GetAll() ([]*entity.Contact, error) {
+func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Contact, error) {
 	q := `SELECT id, pseudonym_id, address, alias 
 		FROM contacts 
+		WHERE pseudonym_id = $1 
 		ORDER BY id;`
 
-	rows, err := r.client.Query(q)
+	rows, err := r.client.Query(q, dto.PseudonymID)
 	if err != nil {
 		return nil, errors.Wrap(err, "query")
 	}

@@ -1,16 +1,15 @@
 package contacts
 
-import "database/sql"
-
 type CreateDTO struct {
 	PseudonymID int
 	Address     string
-	Alias       sql.NullString
+	Alias       string
 }
 
 type UpdateDTO struct {
-	ID    int
-	Alias sql.NullString
+	ID      int
+	Address string
+	Alias   string
 }
 
 type DeleteDTO struct {
@@ -19,4 +18,8 @@ type DeleteDTO struct {
 
 type GetDTO struct {
 	ID int
+}
+
+type GetAllDTO struct {
+	PseudonymID int
 }

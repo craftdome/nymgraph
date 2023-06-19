@@ -8,9 +8,9 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/Tyz3/fyne-extra/xwidget"
-	"github.com/Tyz3/nymgraph/internal/controller"
 	"github.com/Tyz3/nymgraph/internal/entity"
 	"github.com/Tyz3/nymgraph/internal/model"
+	"github.com/Tyz3/nymgraph/internal/service"
 	"github.com/Tyz3/nymgraph/internal/view/custom_widget"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -18,28 +18,31 @@ import (
 
 type ChooseClientWindow struct {
 	App        fyne.App
-	Controller *controller.Controller
+	Controller *service.Service
 	Window     fyne.Window
 
-	selectedClient *model.Client
+	selectedClient *model.Pseudonym
+	addPseudonym   *entity.Pseudonym
 
-	clientsList   *xwidget.PagedList
-	addPseudonym  *entity.Pseudonym
+	list          *xwidget.PagedList
 	addButton     *widget.Button
 	connectButton *widget.Button
 
-	OnSubmit func()
+	OnSubmit func(*model.Pseudonym)
 }
 
-func NewChooseClientWindow(controller *controller.Controller, app fyne.App, title string, icon fyne.Resource) *ChooseClientWindow {
+func NewChooseClientWindow(controller *service.Service, app fyne.App, title string, icon fyne.Resource) *ChooseClientWindow {
 	w := &ChooseClientWindow{
 		App:        app,
 		Controller: controller,
 		Window:     app.NewWindow(title),
+
+		addPseudonym: &entity.Pseudonym{},
+		OnSubmit:     func(*model.Pseudonym) {},
 	}
 
 	w.Window.SetIcon(icon)
-	w.Window.Resize(fyne.NewSize(350, 450))
+	w.Window.Resize(fyne.NewSize(480, 450))
 	w.Window.CenterOnScreen()
 
 	{
@@ -52,6 +55,7 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 		clientNameEntry.OnChanged = func(s string) {
 			w.addPseudonym.Name = s
 		}
+
 		serverNameEntry := widget.NewEntry()
 		serverNameEntry.Validator = func(s string) error {
 			return validate.StructPartial(w.addPseudonym, "Server")
@@ -60,23 +64,36 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 			w.addPseudonym.Server = s
 		}
 
-		w.addPseudonym = &entity.Pseudonym{}
-		w.clientsList = xwidget.NewPagedList(6, func() fyne.CanvasObject {
+		w.list = xwidget.NewPagedList(6, func() fyne.CanvasObject {
 			return custom_widget.NewClientEntry()
 		})
-		w.clientsList.SetUpdateItemFunc(func(id widget.ListItemID, object fyne.CanvasObject) {
-			client := w.clientsList.GetFilteredItems()[id].(*model.Client)
+		w.list.SetUpdateItemFunc(func(id widget.ListItemID, object fyne.CanvasObject) {
+			client := w.list.GetFilteredItems()[id].(*model.Pseudonym)
 			entry := object.(*custom_widget.ClientEntry)
 
 			entry.SetModel(client)
-			entry.OnDeleteTapped = func(client *model.Client) {
-				if _, err := w.Controller.Pseudonyms.Delete(client.Pseudonym.ID); err != nil {
-					dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Delete id=%d", client.Pseudonym.ID), w.Window)
-					return
-				}
-				w.clientsList.Refresh()
+			entry.OnDeleteTapped = func(client *model.Pseudonym) {
+				dialog.ShowConfirm(
+					"Confirmation",
+					fmt.Sprintf("Confirm client %s deletion", client.Pseudonym.Name),
+					func(b bool) {
+						if !b {
+							return
+						}
+						if _, err := w.Controller.Pseudonyms.Delete(client.Pseudonym.ID); err != nil {
+							dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Delete id=%d", client.Pseudonym.ID), w.Window)
+							return
+						}
+						w.list.Reload()
+						w.list.UnselectAll()
+						if len(w.list.GetItems()) == 0 {
+							w.connectButton.Disable()
+						}
+					},
+					w.Window,
+				)
 			}
-			entry.OnEditTapped = func(client *model.Client) {
+			entry.OnEditTapped = func(client *model.Pseudonym) {
 				w.addPseudonym = client.Pseudonym
 				clientNameEntry.SetText(client.Pseudonym.Name)
 				serverNameEntry.SetText(client.Pseudonym.Server)
@@ -102,21 +119,26 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 								dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.Update"), w.Window)
 								//return
 							}
-							w.clientsList.Reload()
+							w.list.Reload()
 						}
 					},
 					w.Window,
 				)
 			}
 			entry.OnLeftClick = func(event *fyne.PointEvent) {
-				w.clientsList.Select(id)
+				w.list.Select(id)
 			}
 		})
-		w.clientsList.OnSelected = func(id widget.ListItemID) {
-			w.selectedClient = w.clientsList.GetFilteredItems()[id].(*model.Client)
-			w.connectButton.Enable()
+		w.list.OnSelected = func(id widget.ListItemID) {
+			w.selectedClient = w.list.GetFilteredItems()[id].(*model.Pseudonym)
+			if w.selectedClient.NymClient != nil {
+				w.connectButton.Enable()
+			} else {
+				w.connectButton.Disable()
+			}
 		}
-		w.clientsList.SetDataSourceFunc(w.dataSource)
+		w.list.SetDataSourceFunc(w.dataSource)
+
 		w.addButton = widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
 			dialog.ShowForm(
 				"Новый клиент",
@@ -140,22 +162,18 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 							dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Create Name=%s, Server=%s", w.addPseudonym.Name, w.addPseudonym.Server), w.Window)
 							return
 						}
-						w.clientsList.Reload()
+						w.list.Reload()
 					}
 				},
 				w.Window,
 			)
 		})
-		w.connectButton = widget.NewButtonWithIcon("Подключиться", theme.LoginIcon(), func() {
-			fmt.Println(1)
-			if err := w.Controller.NymClient.Dial(w.selectedClient.Pseudonym); err != nil {
-				dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.GetAll"), w.Window)
-			}
-			fmt.Println(2)
 
-			if w.OnSubmit != nil {
-				w.OnSubmit()
-			}
+		w.connectButton = widget.NewButtonWithIcon("Подключиться", theme.LoginIcon(), func() {
+			w.connectButton.Disable()
+			defer w.connectButton.Enable()
+
+			w.OnSubmit(w.selectedClient)
 		})
 		w.connectButton.Importance = widget.HighImportance
 		w.connectButton.Disable()
@@ -169,7 +187,7 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 				),
 				nil,
 				nil,
-				w.clientsList,
+				w.list,
 			),
 		)
 	}
@@ -178,23 +196,25 @@ func NewChooseClientWindow(controller *controller.Controller, app fyne.App, titl
 }
 
 func (w *ChooseClientWindow) dataSource() []any {
-	clients, err := w.Controller.Pseudonyms.GetAll()
+	pseudonyms, err := w.Controller.Pseudonyms.GetAll()
 	if err != nil {
 		dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.GetAll"), w.Window)
 		return []any{}
 	}
 
-	entries := make([]any, 0, len(clients))
-
-	for _, b := range clients {
-		entries = append(entries, &model.Client{Pseudonym: b})
+	entries := make([]any, 0, len(pseudonyms))
+	for _, pseudonym := range pseudonyms {
+		entries = append(entries, &model.Pseudonym{
+			Pseudonym: pseudonym,
+			NymClient: w.Controller.NymClient.New(pseudonym),
+		})
 	}
 
 	return entries
 }
 
 func (w *ChooseClientWindow) Load() error {
-	w.clientsList.Reload()
+	w.list.Reload()
 
 	return nil
 }

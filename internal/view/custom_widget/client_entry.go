@@ -13,7 +13,7 @@ import (
 type ClientEntry struct {
 	widget.BaseWidget
 
-	model *model.Client
+	model *model.Pseudonym
 
 	buttonMenu *fyne.Menu
 
@@ -24,8 +24,8 @@ type ClientEntry struct {
 
 	OnLeftClick    func(*fyne.PointEvent)
 	OnRightClick   func(*fyne.PointEvent)
-	OnEditTapped   func(*model.Client)
-	OnDeleteTapped func(*model.Client)
+	OnEditTapped   func(*model.Pseudonym)
+	OnDeleteTapped func(*model.Pseudonym)
 }
 
 func NewClientEntry() *ClientEntry {
@@ -54,11 +54,11 @@ func NewClientEntry() *ClientEntry {
 	return w
 }
 
-func (w *ClientEntry) GetModel() *model.Client {
+func (w *ClientEntry) GetModel() *model.Pseudonym {
 	return w.model
 }
 
-func (w *ClientEntry) SetModel(model *model.Client) {
+func (w *ClientEntry) SetModel(model *model.Pseudonym) {
 	w.model = model
 
 	w.nameLabel.SetText(w.model.Pseudonym.Name)
@@ -89,7 +89,7 @@ func (w *ClientEntry) TappedSecondary(event *fyne.PointEvent) {
 
 func (w *ClientEntry) CreateRenderer() fyne.WidgetRenderer {
 	w.ExtendBaseWidget(w)
-	return &BotEntryRenderer{objects: []fyne.CanvasObject{
+	return &ClientEntryRenderer{objects: []fyne.CanvasObject{
 		container.NewHBox(
 			w.nameLabel,
 			layout.NewSpacer(),
@@ -101,20 +101,20 @@ func (w *ClientEntry) CreateRenderer() fyne.WidgetRenderer {
 	}}
 }
 
-type BotEntryRenderer struct {
+type ClientEntryRenderer struct {
 	objects []fyne.CanvasObject
 }
 
-func (r *BotEntryRenderer) Destroy() {
+func (r *ClientEntryRenderer) Destroy() {
 }
 
-func (r *BotEntryRenderer) Layout(size fyne.Size) {
+func (r *ClientEntryRenderer) Layout(size fyne.Size) {
 	for _, o := range r.objects {
 		o.Resize(size)
 	}
 }
 
-func (r *BotEntryRenderer) MinSize() fyne.Size {
+func (r *ClientEntryRenderer) MinSize() fyne.Size {
 	minSize := fyne.NewSize(0, 0)
 	for _, child := range r.objects {
 		minSize = minSize.Max(child.MinSize())
@@ -122,11 +122,11 @@ func (r *BotEntryRenderer) MinSize() fyne.Size {
 	return minSize
 }
 
-func (r *BotEntryRenderer) Objects() []fyne.CanvasObject {
+func (r *ClientEntryRenderer) Objects() []fyne.CanvasObject {
 	return r.objects
 }
 
-func (r *BotEntryRenderer) Refresh() {
+func (r *ClientEntryRenderer) Refresh() {
 	for _, o := range r.objects {
 		o.Refresh()
 	}

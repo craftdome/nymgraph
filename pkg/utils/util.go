@@ -4,12 +4,17 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/driver/desktop"
+	"fyne.io/fyne/v2/theme"
+	"fyne.io/fyne/v2/widget"
 	"github.com/pkg/errors"
 	"golang.design/x/clipboard"
 	"io"
 	"os"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func PrintJson(data []byte) error {
@@ -46,6 +51,19 @@ func CopyToClipboard(text string) error {
 	clipboard.Write(clipboard.FmtText, []byte(text))
 
 	return nil
+}
+
+func ShowSplash(text any) {
+	if drv, ok := fyne.CurrentApp().Driver().(desktop.Driver); ok {
+		w := drv.CreateSplashWindow()
+		w.SetIcon(theme.ContentCopyIcon())
+		w.SetContent(widget.NewRichTextWithText(fmt.Sprintf("%v", text)))
+		w.Show()
+		go func() {
+			time.Sleep(1 * time.Second)
+			w.Close()
+		}()
+	}
 }
 
 func LinesFromFile(path string) ([]string, error) {

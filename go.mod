@@ -5,7 +5,7 @@ go 1.20
 require (
 	fyne.io/fyne/v2 v2.3.3
 	github.com/Tyz3/fyne-extra v0.0.0-20230510064333-6fa4ebf35777
-	github.com/Tyz3/go-nym v0.0.0-20230428162241-9823a3377f58
+	github.com/Tyz3/go-nym v0.0.0-20230612135536-129641fd11a0
 	github.com/go-playground/validator/v10 v10.13.0
 	github.com/mattn/go-sqlite3 v1.14.16
 	github.com/pkg/errors v0.9.1

@@ -46,8 +46,8 @@ github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/Tyz3/fyne-extra v0.0.0-20230510064333-6fa4ebf35777 h1:d6f1VOyRh2LIU26Rie3E7QHOAshfyv9O0jf9AagZqRU=
 github.com/Tyz3/fyne-extra v0.0.0-20230510064333-6fa4ebf35777/go.mod h1:1SXpfAv5xB73B/9QkY7F1n9eGtq/vsJXn/4OhqvXRc0=
-github.com/Tyz3/go-nym v0.0.0-20230428162241-9823a3377f58 h1:WhZg4sKQJdyANvEkRBe+au8+yxEjcG5bscMiUfYH4Zw=
-github.com/Tyz3/go-nym v0.0.0-20230428162241-9823a3377f58/go.mod h1:8BWgradVkYlp/oZDOziwVRaF5Lae9K895X21vdzDT2g=
+github.com/Tyz3/go-nym v0.0.0-20230612135536-129641fd11a0 h1:QocKdXQkn1jfcNPnGxTn1gMYWwLL0wfZbVYRMocVNss=
+github.com/Tyz3/go-nym v0.0.0-20230612135536-129641fd11a0/go.mod h1:8BWgradVkYlp/oZDOziwVRaF5Lae9K895X21vdzDT2g=
 github.com/akavel/rsrc v0.10.2/go.mod h1:uLoCtb9J+EyAqh+26kdrTgmzRBFPGOolLWKpdxkKq+c=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
