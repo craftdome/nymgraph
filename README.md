@@ -1,5 +1,7 @@
-# nymgraph
+# Nymgraph
 A graphical chat client for NYM (nym-client)
+
+Progress to the first version: **80%**
 
 # Screenshots
 
