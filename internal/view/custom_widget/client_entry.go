@@ -7,13 +7,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/Tyz3/fyne-extra/xwidget"
-	"github.com/Tyz3/nymgraph/internal/model"
+	"github.com/Tyz3/nymgraph/internal/entity"
 )
 
 type ClientEntry struct {
 	widget.BaseWidget
 
-	model *model.Pseudonym
+	model *entity.Pseudonym
 
 	buttonMenu *fyne.Menu
 
@@ -24,8 +24,8 @@ type ClientEntry struct {
 
 	OnLeftClick    func(*fyne.PointEvent)
 	OnRightClick   func(*fyne.PointEvent)
-	OnEditTapped   func(*model.Pseudonym)
-	OnDeleteTapped func(*model.Pseudonym)
+	OnEditTapped   func(*entity.Pseudonym)
+	OnDeleteTapped func(*entity.Pseudonym)
 }
 
 func NewClientEntry() *ClientEntry {
@@ -54,15 +54,15 @@ func NewClientEntry() *ClientEntry {
 	return w
 }
 
-func (w *ClientEntry) GetModel() *model.Pseudonym {
+func (w *ClientEntry) GetModel() *entity.Pseudonym {
 	return w.model
 }
 
-func (w *ClientEntry) SetModel(model *model.Pseudonym) {
+func (w *ClientEntry) SetModel(model *entity.Pseudonym) {
 	w.model = model
 
-	w.nameLabel.SetText(w.model.Pseudonym.Name)
-	w.serverLabel.SetText(w.model.Pseudonym.Server)
+	w.nameLabel.SetText(w.model.Name)
+	w.serverLabel.SetText(w.model.Server)
 	w.editButton.OnTapped = func() {
 		if w.OnEditTapped != nil {
 			w.OnEditTapped(w.model)

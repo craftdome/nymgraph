@@ -6,17 +6,19 @@ import (
 )
 
 type Entity struct {
-	ID        int
-	ContactID int
-	CreateAt  int64
-	Text      string
+	ID         int
+	ContactID  int
+	CreateAt   int64
+	Text       string
+	ReplySurbs int
 }
 
 func (e *Entity) ToDomain() *entity.Sent {
 	return &entity.Sent{
-		ID:        e.ID,
-		ContactID: e.ContactID,
-		CreateAt:  time.Unix(e.CreateAt, 0),
-		Text:      e.Text,
+		ID:         e.ID,
+		ContactID:  e.ContactID,
+		CreateAt:   time.Unix(e.CreateAt, 0),
+		Text:       e.Text,
+		ReplySurbs: e.ReplySurbs,
 	}
 }

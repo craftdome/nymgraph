@@ -15,7 +15,7 @@ func NewRepo(client client.Client) *Repo {
 }
 
 func (r *Repo) Create(dto CreateDTO) (*entity.Received, error) {
-	q := `INSERT INTO received (text, pseudonym_id, sender_tag) 
+	q := `INSERT INTO received (pseudonym_id, text, sender_tag) 
 		VALUES ($1, $2, $3) 
 		RETURNING id, pseudonym_id, create_at, text, sender_tag;`
 
@@ -26,6 +26,7 @@ func (r *Repo) Create(dto CreateDTO) (*entity.Received, error) {
 		dto.SenderTag,
 	).Scan(
 		&result.ID,
+		&result.PseudonymID,
 		&result.CreateAt,
 		&result.Text,
 		&result.SenderTag,
@@ -118,7 +119,7 @@ func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Received, error) {
 }
 
 func (r *Repo) Truncate() error {
-	q := `TRUNCATE received restart identity;`
+	q := `DELETE FROM received;delete from sqlite_sequence where name='received'`
 
 	if _, err := r.client.Exec(q); err != nil {
 		return errors.Wrapf(err, "Exec")

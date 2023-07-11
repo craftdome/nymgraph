@@ -7,13 +7,16 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/Tyz3/fyne-extra/xwidget"
 	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/internal/model"
 	"github.com/Tyz3/nymgraph/internal/service"
 	"github.com/Tyz3/nymgraph/internal/view/custom_widget"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
+	"regexp"
+)
+
+var (
+	proxyRegex = regexp.MustCompile(`((.+):(.+)@)?(\d+.\d+.\d+.\d+):(\d+)`)
 )
 
 type SettingsWindow struct {
@@ -21,12 +24,22 @@ type SettingsWindow struct {
 	Controller *service.Service
 	Window     fyne.Window
 
-	selectedClient *model.Pseudonym
-	addPseudonym   *entity.Pseudonym
+	pseudonyms             []*entity.Pseudonym
+	addPseudonym           *entity.Pseudonym
+	useProxy               bool
+	proxyCredentials       string
+	deleteHistoryAfterQuit bool
 
-	list          *xwidget.PagedList
-	addButton     *widget.Button
-	connectButton *widget.Button
+	list                        *custom_widget.TList[*entity.Pseudonym]
+	addButton                   *widget.Button
+	deleteHistoryAfterQuitCheck *widget.Check
+	useProxyCheck               *widget.Check
+	proxyCredentialsEntry       *widget.Entry
+	connectButton               *widget.Button
+
+	OnUpdate func(*entity.Pseudonym)
+	OnCreate func(*entity.Pseudonym)
+	OnDelete func(*entity.Pseudonym)
 }
 
 func NewSettingsWindow(controller *service.Service, app fyne.App, title string, icon fyne.Resource) *SettingsWindow {
@@ -46,78 +59,108 @@ func NewSettingsWindow(controller *service.Service, app fyne.App, title string, 
 		validate := validator.New()
 
 		clientNameEntry := widget.NewEntry()
+		clientNameEntry.PlaceHolder = "max"
 		clientNameEntry.Validator = func(s string) error {
-			return validate.StructPartial(w.addPseudonym, "Name")
-		}
-		clientNameEntry.OnChanged = func(s string) {
 			w.addPseudonym.Name = s
+			if err := validate.StructPartial(w.addPseudonym, "Name"); err != nil {
+				return err
+			}
+
+			return nil
 		}
 
 		serverNameEntry := widget.NewEntry()
 		serverNameEntry.Validator = func(s string) error {
-			return validate.StructPartial(w.addPseudonym, "Server")
-		}
-		serverNameEntry.OnChanged = func(s string) {
 			w.addPseudonym.Server = s
-		}
+			if err := validate.StructPartial(w.addPseudonym, "Server"); err != nil {
+				return err
+			}
 
-		w.list = xwidget.NewPagedList(6, func() fyne.CanvasObject {
+			return nil
+		}
+		serverNameEntry.PlaceHolder = "127.0.0.1:1977"
+
+		w.deleteHistoryAfterQuitCheck = widget.NewCheck("Delete chat history after quit", func(b bool) {
+			w.deleteHistoryAfterQuit = b
+			w.Controller.Config.SetDeleteHistoryAfterQuit(b)
+		})
+
+		w.list = new(custom_widget.TList[*entity.Pseudonym])
+		w.list.Init(6, func() fyne.CanvasObject {
 			return custom_widget.NewClientEntry()
 		})
-		w.list.SetUpdateItemFunc(func(id widget.ListItemID, object fyne.CanvasObject) {
-			client := w.list.GetFilteredItems()[id].(*model.Pseudonym)
+		w.list.SetUpdateItemFunc(func(id int, pseudonym *entity.Pseudonym, object fyne.CanvasObject) {
 			entry := object.(*custom_widget.ClientEntry)
 
-			entry.SetModel(client)
-			entry.OnDeleteTapped = func(client *model.Pseudonym) {
+			entry.SetModel(pseudonym)
+			entry.OnDeleteTapped = func(pseudonym *entity.Pseudonym) {
 				dialog.ShowConfirm(
 					"Confirmation",
-					fmt.Sprintf("Confirm client %s deletion", client.Pseudonym.Name),
+					fmt.Sprintf("Confirm client %s deletion", pseudonym.Name),
 					func(b bool) {
 						if !b {
 							return
 						}
-						if _, err := w.Controller.Pseudonyms.Delete(client.Pseudonym.ID); err != nil {
-							dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Delete id=%d", client.Pseudonym.ID), w.Window)
+						deleted, err := w.Controller.Pseudonyms.Delete(pseudonym.ID)
+						if err != nil {
+							dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Delete id=%d", pseudonym.ID), w.Window)
 							return
+						}
+
+						for i, p := range w.pseudonyms {
+							if p.ID == deleted.ID {
+								w.pseudonyms = append(w.pseudonyms[:i], w.pseudonyms[i+1:]...)
+								break
+							}
 						}
 						w.list.Reload()
 						w.list.UnselectAll()
-						if len(w.list.GetItems()) == 0 {
-							w.connectButton.Disable()
-						}
+						w.connectButton.Disable()
+						w.OnDelete(deleted)
 					},
 					w.Window,
 				)
 			}
-			entry.OnEditTapped = func(client *model.Pseudonym) {
-				w.addPseudonym = client.Pseudonym
-				clientNameEntry.SetText(client.Pseudonym.Name)
-				serverNameEntry.SetText(client.Pseudonym.Server)
+			entry.OnEditTapped = func(pseudonym *entity.Pseudonym) {
+				w.addPseudonym = pseudonym
+				clientNameEntry.SetText(pseudonym.Name)
+				serverNameEntry.SetText(pseudonym.Server)
 				dialog.ShowForm(
-					"Редактирование клиента",
-					"Сохранить",
-					"Отменить",
+					"Editing",
+					"Save",
+					"Cancel",
 					[]*widget.FormItem{
 						{
-							Text:     "Название клиента",
+							Text:     "Pseudonym Name",
 							Widget:   clientNameEntry,
-							HintText: "Дайте название своему nym-client",
+							HintText: "give a name to your nym-client",
 						},
 						{
-							Text:     "Сервер",
+							Text:     "Server",
 							Widget:   serverNameEntry,
-							HintText: "Конечная точка подключения к nym-client",
+							HintText: "nym-client endpoint like 127.0.0.1:1977",
 						},
 					},
 					func(b bool) {
-						if b {
-							if _, err := w.Controller.Pseudonyms.Update(w.addPseudonym.ID, w.addPseudonym.Name, w.addPseudonym.Server); err != nil {
-								dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.Update"), w.Window)
-								//return
-							}
-							w.list.Reload()
+						if !b {
+							return
 						}
+
+						updated, err := w.Controller.Pseudonyms.Update(w.addPseudonym.ID, w.addPseudonym.Name, w.addPseudonym.Server)
+						if err != nil {
+							dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.Update"), w.Window)
+							return
+						}
+
+						for i, p := range w.pseudonyms {
+							if p.ID == updated.ID {
+								w.pseudonyms[i] = updated
+								break
+							}
+						}
+
+						w.list.Reload()
+						w.OnUpdate(updated)
 					},
 					w.Window,
 				)
@@ -126,49 +169,86 @@ func NewSettingsWindow(controller *service.Service, app fyne.App, title string, 
 				w.list.Select(id)
 			}
 		})
-		w.list.OnSelected = func(id widget.ListItemID) {
-			w.selectedClient = w.list.GetFilteredItems()[id].(*model.Pseudonym)
-			if w.selectedClient.NymClient != nil {
-				w.connectButton.Enable()
-			} else {
-				w.connectButton.Disable()
-			}
-		}
-		w.list.SetDataSourceFunc(w.dataSource)
+		w.list.SetDataSourceFunc(func() []*entity.Pseudonym {
+			return w.pseudonyms
+		})
 
 		w.addButton = widget.NewButtonWithIcon("", theme.ContentAddIcon(), func() {
 			dialog.ShowForm(
-				"Новый клиент",
-				"Добавить",
-				"Отменить",
+				"Creating",
+				"Create",
+				"Cancel",
 				[]*widget.FormItem{
 					{
-						Text:     "Название клиента",
+						Text:     "Pseudonym name",
 						Widget:   clientNameEntry,
-						HintText: "Дайте название своему nym-client",
+						HintText: "give a name to your nym-client",
 					},
 					{
 						Text:     "Сервер",
 						Widget:   serverNameEntry,
-						HintText: "Конечная точка подключения к nym-client",
+						HintText: "nym-client endpoint like 127.0.0.1:1977",
 					},
 				},
 				func(b bool) {
-					if b {
-						if _, err := w.Controller.Pseudonyms.Create(w.addPseudonym.Name, w.addPseudonym.Server); err != nil {
-							dialog.ShowError(errors.Wrapf(err, "Controller.Pseudonyms.Create Name=%s, Server=%s", w.addPseudonym.Name, w.addPseudonym.Server), w.Window)
-							return
-						}
-						w.list.Reload()
+					if !b {
+						return
 					}
+
+					created, err := w.Controller.Pseudonyms.Create(w.addPseudonym.Name, w.addPseudonym.Server)
+					if err != nil {
+						dialog.ShowError(err, w.Window)
+						return
+					}
+
+					w.pseudonyms = append(w.pseudonyms, created)
+					w.list.Reload()
+					w.OnCreate(created)
 				},
 				w.Window,
 			)
 		})
 
+		w.useProxyCheck = widget.NewCheck("Use SOCKS5", func(b bool) {
+			w.useProxy = b
+			w.Controller.Config.UseProxy(b)
+			if b {
+				w.proxyCredentialsEntry.Enable()
+			} else {
+				w.proxyCredentialsEntry.Disable()
+			}
+		})
+		// TODO
+		w.useProxyCheck.Disable()
+
+		w.proxyCredentialsEntry = widget.NewEntry()
+		w.proxyCredentialsEntry.PlaceHolder = "[user:pass@]addr:port"
+		w.proxyCredentialsEntry.Disable()
+		w.proxyCredentialsEntry.Validator = func(s string) error {
+			if s == "" && !w.useProxy {
+				return nil
+			}
+
+			if !proxyRegex.MatchString(s) {
+				return errors.New("invalid format: [user:pass@]addr:port")
+			}
+
+			w.Controller.Config.SetProxy(s)
+			return nil
+		}
+
 		w.Window.SetContent(
 			container.NewBorder(
-				nil,
+				container.NewVBox(
+					container.NewBorder(
+						nil,
+						nil,
+						w.useProxyCheck,
+						nil,
+						w.proxyCredentialsEntry,
+					),
+					w.deleteHistoryAfterQuitCheck,
+				),
 				w.addButton,
 				nil,
 				nil,
@@ -180,26 +260,36 @@ func NewSettingsWindow(controller *service.Service, app fyne.App, title string, 
 	return w
 }
 
-func (w *SettingsWindow) dataSource() []any {
+func (w *SettingsWindow) Load() {
 	pseudonyms, err := w.Controller.Pseudonyms.GetAll()
 	if err != nil {
-		dialog.ShowError(errors.Wrap(err, "Controller.Pseudonyms.GetAll"), w.Window)
-		return []any{}
+		dialog.ShowError(err, w.Window)
+		return
 	}
 
-	entries := make([]any, 0, len(pseudonyms))
-	for _, pseudonym := range pseudonyms {
-		entries = append(entries, &model.Pseudonym{
-			Pseudonym: pseudonym,
-			NymClient: w.Controller.NymClient.New(pseudonym),
-		})
-	}
+	w.useProxy = w.Controller.UsingProxy()
+	w.proxyCredentials = w.Controller.GetProxy()
+	w.deleteHistoryAfterQuit = w.Controller.DeleteHistoryAfterQuit()
 
-	return entries
+	w.pseudonyms = pseudonyms
+	w.update()
 }
 
-func (w *SettingsWindow) Load() error {
+func (w *SettingsWindow) Unload() {
+	w.pseudonyms = nil
+	w.addPseudonym = &entity.Pseudonym{}
+	w.proxyCredentials = ""
+}
+
+func (w *SettingsWindow) reload() {
+	w.Unload()
+	w.Load()
+}
+
+func (w *SettingsWindow) update() {
 	w.list.Reload()
 
-	return nil
+	w.useProxyCheck.SetChecked(w.useProxy)
+	w.proxyCredentialsEntry.SetText(w.proxyCredentials)
+	w.deleteHistoryAfterQuitCheck.SetChecked(w.deleteHistoryAfterQuit)
 }

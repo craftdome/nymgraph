@@ -10,7 +10,6 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/Tyz3/nymgraph/cmd/app/config"
 	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/internal/model"
 	"github.com/Tyz3/nymgraph/internal/service"
 	"github.com/pkg/errors"
 	"os"
@@ -26,10 +25,11 @@ type App struct {
 	app        fyne.App
 	controller *service.Service
 
-	models []*model.Pseudonym
-	menu   *fyne.Menu
+	pseudonyms []*entity.Pseudonym
+	menu       *fyne.Menu
 
-	openedChat map[string]*HomeWindow
+	openedChats map[string]*HomeWindow
+	mu          sync.Mutex
 }
 
 func NewApp(appName string, controller *service.Service) *App {
@@ -37,11 +37,9 @@ func NewApp(appName string, controller *service.Service) *App {
 		app:        app.NewWithID(appName),
 		controller: controller,
 
-		menu:       fyne.NewMenu("Nymgraph"),
-		openedChat: make(map[string]*HomeWindow),
+		menu:        fyne.NewMenu("Nymgraph"),
+		openedChats: make(map[string]*HomeWindow),
 	}
-
-	a.app.Settings().SetTheme(theme.DarkTheme())
 
 	return a
 }
@@ -59,22 +57,56 @@ func (a *App) Run() {
 
 func (a *App) Close() {
 	var wg sync.WaitGroup
-	for _, m := range a.models {
-		m := m
+	for _, chat := range a.openedChats {
+		chat := chat
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			if m.NymClient != nil && m.NymClient.IsOnline() {
-				m.NymClient.Close()
-			}
+			chat.Close()
 		}()
 	}
 	wg.Wait()
+
+	if a.controller.Config.DeleteHistoryAfterQuit() {
+		if err := a.controller.Sent.Truncate(); err == nil {
+			fmt.Println("Sent data cleaned")
+		}
+
+		if err := a.controller.Received.Truncate(); err == nil {
+			fmt.Println("Received/Replies data cleaned")
+		}
+	}
 }
 
 func (a *App) Load() {
 	settItem := fyne.NewMenuItem("Settings", func() {
-
+		w := NewSettingsWindow(a.controller, a.app, "Settings", theme.SettingsIcon())
+		w.Window.Show()
+		w.Load()
+		w.Window.SetCloseIntercept(func() {
+			w.Unload()
+			w.Window.Close()
+		})
+		w.OnCreate = func(pseudonym *entity.Pseudonym) {
+			w.pseudonyms = append(w.pseudonyms, pseudonym)
+		}
+		w.OnUpdate = func(pseudonym *entity.Pseudonym) {
+			for i, p := range w.pseudonyms {
+				if p.ID == pseudonym.ID {
+					w.pseudonyms[i].Name = pseudonym.Name
+					w.pseudonyms[i].Server = pseudonym.Server
+					break
+				}
+			}
+		}
+		w.OnDelete = func(pseudonym *entity.Pseudonym) {
+			for i, p := range w.pseudonyms {
+				if p.ID == pseudonym.ID {
+					w.pseudonyms = append(w.pseudonyms[:i], w.pseudonyms[i+1:]...)
+					break
+				}
+			}
+		}
 	})
 	settItem.Icon = theme.SettingsIcon()
 	a.menu.Items = append(a.menu.Items,
@@ -98,83 +130,85 @@ func (a *App) Reload() {
 		return
 	}
 
-	for _, pseudonym := range pseudonyms {
-		a.addMenuClient(pseudonym)
-	}
+	a.pseudonyms = pseudonyms
 }
 
 func (a *App) update() {
-	for _, m := range a.models {
-		m := m
-		label := fmt.Sprintf("%s (%s)", m.Pseudonym.Name, m.Pseudonym.Server)
+	var wg sync.WaitGroup
+	for _, pseudonym := range a.pseudonyms {
+		pseudonym := pseudonym
 
-		// Если добавлен новый клиент, то у него не будет MenuItem
-		if m.MenuItem == nil {
-			m.MenuItem = fyne.NewMenuItem(label, nil)
-			m.MenuItem.Icon = theme.NewPrimaryThemedResource(theme.LoginIcon())
-			m.MenuItem.Disabled = true
-			a.menu.Items = append([]*fyne.MenuItem{m.MenuItem}, a.menu.Items...)
-			//fmt.Println(label, "Добавлен элемент меню")
-		}
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer a.menu.Refresh()
 
-		if m.NymClient.IsOnline() {
-			//fmt.Println(label, "IsOnline")
-			continue
-		}
-
-		// Если клиент не онлайн, то пробуем подключиться
-		if err := m.NymClient.Dial(); err != nil {
-			//fmt.Println(label, "не удалось подключиться")
-			m.MenuItem.Action = nil
-			m.MenuItem.Disabled = true
-			continue
-		}
-
-		// Включаем прослушку входящих сообщений
-		if err := m.NymClient.ListenAndServe(); err != nil {
-			m.MenuItem.Action = nil
-			m.MenuItem.Disabled = true
-			continue
-		}
-
-		// Если подключение к клиенту установлено, активируем кнопку в меню
-		m.MenuItem.Disabled = false
-		m.MenuItem.Action = func() {
-			// Если Checked = true, то чат-клиент уже открыт, вызываем на него фокус
-			if m.MenuItem.Checked {
-				//fmt.Println(label, "окно уже открыто - фокус")
-				a.openedChat[m.Pseudonym.Name].Window.RequestFocus()
-			} else {
-				var w *HomeWindow
-				if opened, exists := a.openedChat[m.Pseudonym.Name]; exists {
-					//fmt.Println(label, "открываем созданное окно")
-					w = opened
-				} else {
-					//fmt.Println(label, "создаём новое окно")
-					w = NewHomeWindow(a.controller, a.app, fmt.Sprintf("Connected - %s", label), logo, m)
-					w.Load()
-					a.openedChat[m.Pseudonym.Name] = w
+			// Search an opened chat
+			openedChat, exists := a.openedChats[pseudonym.Name]
+			if !exists {
+				// Create connect to the nym-client by pseudonym settings
+				connect := a.controller.NymClient.New(pseudonym)
+				// Create Window for opening when MenuItem will be tapped
+				openedChat = NewHomeWindow(
+					a.controller, a.app,
+					fmt.Sprintf("Connected - %s (%s)", pseudonym.Name, pseudonym.Server),
+					logo,
+					pseudonym,
+					connect,
+				)
+				// Handle socket closed
+				connect.OnCloseCallback = func() {
+					fmt.Println("Connection closed")
 				}
-				w.Window.Show()
-				w.Window.SetCloseIntercept(func() {
-					//fmt.Println(label, "скрываем окно")
-					w.Window.Hide()
-					m.MenuItem.Checked = false
-					a.menu.Refresh()
-				})
-				m.MenuItem.Checked = true
+				// Update map and menu
+				a.mu.Lock()
+				a.openedChats[pseudonym.Name] = openedChat
+				a.mu.Unlock()
+				a.menu.Items = append([]*fyne.MenuItem{openedChat.MenuItem()}, a.menu.Items...)
 				a.menu.Refresh()
 			}
-		}
-	}
-	a.menu.Refresh()
-}
 
-func (a *App) addMenuClient(e *entity.Pseudonym) {
-	a.models = append(a.models, &model.Pseudonym{
-		Pseudonym: e,
-		NymClient: a.controller.NymClient.New(e),
-	})
+			// Check connect by online
+			if openedChat.ClientConnect().IsOnline() {
+				openedChat.UpdateSelfAddress()
+				return
+			}
+
+			// Try to connect with the nym-client
+			if err := openedChat.ClientConnect().Dial(); err != nil {
+				// Disable MenuItem when failure
+				openedChat.MenuItem().Action = nil
+				openedChat.MenuItem().Disabled = true
+				return
+			}
+
+			// Start listening incoming message from the nym-client
+			if err := openedChat.ClientConnect().ListenAndServe(); err != nil {
+				openedChat.MenuItem().Action = nil
+				openedChat.MenuItem().Disabled = true
+				return
+			}
+
+			openedChat.MenuItem().Disabled = false
+			openedChat.MenuItem().Action = func() {
+				if openedChat.MenuItem().Checked {
+					openedChat.Window.RequestFocus()
+				} else {
+					openedChat.Load()
+					openedChat.Window.Show()
+					openedChat.Window.SetCloseIntercept(func() {
+						openedChat.Window.Hide()
+						openedChat.MenuItem().Checked = false
+						a.menu.Refresh()
+						openedChat.Unload()
+					})
+					openedChat.MenuItem().Checked = true
+					a.menu.Refresh()
+				}
+			}
+		}()
+		wg.Wait()
+	}
 }
 
 func (a *App) MessageError(err error) {

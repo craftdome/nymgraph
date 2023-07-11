@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/Tyz3/nymgraph/internal/model"
 	"github.com/Tyz3/nymgraph/internal/nym_client"
 	"github.com/Tyz3/nymgraph/internal/repository"
 	"github.com/Tyz3/nymgraph/internal/state"
@@ -12,10 +13,10 @@ type NymClient interface {
 }
 
 type Contacts interface {
-	Create(pseudonymID int, addr, alias string) (*entity.Contact, error)
-	Update(id int, addr, alias string) (*entity.Contact, error)
-	Delete(id int) (*entity.Contact, error)
-	GetAll(pseudonymID int) ([]*entity.Contact, error)
+	Create(pseudonymID int, addr, alias string) (*model.Contact, error)
+	Update(id int, addr, alias string) (*model.Contact, error)
+	Delete(id int) (*model.Contact, error)
+	GetAll(pseudonymID int) ([]*model.Contact, error)
 }
 
 type Pseudonyms interface {
@@ -26,24 +27,33 @@ type Pseudonyms interface {
 }
 
 type Sent interface {
-	Create(contactID int, text string) (*entity.Sent, error)
-	Delete(id int) (*entity.Sent, error)
-	GetAll(contactID int) ([]*entity.Sent, error)
+	Create(contactID int, text string, replySurbs int) (*model.Sent, error)
+	Delete(id int) (*model.Sent, error)
+	GetAll(contactID int) ([]*model.Sent, error)
 	Truncate() error
 }
 
 type Replies interface {
-	Create(receivedID int, text string) (*entity.Reply, error)
-	Delete(id int) (*entity.Reply, error)
-	GetAll(receivedID int) ([]*entity.Reply, error)
+	Create(receivedID int, text string) (*model.Reply, error)
+	Delete(id int) (*model.Reply, error)
+	GetAll(receivedID int) ([]*model.Reply, error)
 	Truncate() error
 }
 
 type Received interface {
-	Create(pseudonymID int, text, senderTag string) (*entity.Received, error)
-	Delete(id int) (*entity.Received, error)
-	GetAll(pseudonymID int) ([]*entity.Received, error)
+	Create(pseudonymID int, text, senderTag string) (*model.Received, error)
+	Delete(id int) (*model.Received, error)
+	GetAll(pseudonymID int) ([]*model.Received, error)
 	Truncate() error
+}
+
+type Config interface {
+	DeleteHistoryAfterQuit() bool
+	SetDeleteHistoryAfterQuit(b bool)
+	UseProxy(b bool)
+	SetProxy(s string)
+	UsingProxy() bool
+	GetProxy() string
 }
 
 type Service struct {
@@ -53,6 +63,7 @@ type Service struct {
 	Sent
 	Replies
 	Received
+	Config
 }
 
 func NewService(repo *repository.Repository, state *state.State) *Service {
@@ -63,5 +74,6 @@ func NewService(repo *repository.Repository, state *state.State) *Service {
 		Sent:       NewSentService(repo, state),
 		Replies:    NewRepliesService(repo, state),
 		Received:   NewReceivedService(repo, state),
+		Config:     NewConfigService(state),
 	}
 }

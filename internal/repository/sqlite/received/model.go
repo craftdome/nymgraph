@@ -9,7 +9,7 @@ import (
 type Entity struct {
 	ID          int
 	PseudonymID int
-	CreateAt    time.Time
+	CreateAt    int64
 	Text        string
 	SenderTag   sql.NullString
 }
@@ -18,7 +18,7 @@ func (e *Entity) ToDomain() *entity.Received {
 	return &entity.Received{
 		ID:          e.ID,
 		PseudonymID: e.PseudonymID,
-		CreateAt:    e.CreateAt,
+		CreateAt:    time.Unix(e.CreateAt, 0),
 		Text:        e.Text,
 		SenderTag:   e.SenderTag.String,
 	}

@@ -13,3 +13,7 @@ func NewState(cfg *config.Config) *State {
 		cfg: cfg,
 	}
 }
+
+func (s *State) GetConfig() *config.Config {
+	return s.cfg
+}

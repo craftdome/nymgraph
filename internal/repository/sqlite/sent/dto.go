@@ -1,8 +1,9 @@
 package sent
 
 type CreateDTO struct {
-	ContactID int
-	Text      string
+	ContactID  int
+	Text       string
+	ReplySurbs int
 }
 
 type DeleteDTO struct {

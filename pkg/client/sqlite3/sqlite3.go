@@ -33,5 +33,9 @@ func NewClient(cfg Config) (client.Client, error) {
 		return nil, errors.Wrap(err, "db.Ping()")
 	}
 
+	if _, err := db.Exec("PRAGMA foreign_keys = ON;"); err != nil {
+		return nil, err
+	}
+
 	return db, nil
 }

@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	NymAddrRegexp = regexp.MustCompile("([A-z0-9]{44}).([A-z0-9]{44})@([A-z0-9]{44})")
+	NymAddrRegexp = regexp.MustCompile("([A-z0-9]+).([A-z0-9]+)@([A-z0-9]+)")
 )
 
 type ContactsTab struct {
@@ -27,39 +27,40 @@ type ContactsTab struct {
 	Window     fyne.Window
 	TabItem    *container.TabItem
 
-	model *model.Pseudonym
+	pseudonym *entity.Pseudonym
 
 	list      *xwidget.PagedList
 	addButton *widget.Button
 
-	OnUpdate func()
+	OnUpdateCallback func(last, new *model.Contact)
+	OnDeleteCallback func(*model.Contact)
+	OnCreateCallback func(*model.Contact)
 }
 
-func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Window, title string, icon fyne.Resource, pseudonym *model.Pseudonym) *ContactsTab {
+func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Window, title string, icon fyne.Resource, pseudonym *entity.Pseudonym) *ContactsTab {
 	t := &ContactsTab{
 		App:        app,
 		Controller: controller,
 		Window:     window,
 		TabItem:    container.NewTabItemWithIcon(title, icon, nil),
 
-		model: pseudonym,
+		pseudonym: pseudonym,
 	}
 
 	{
 		t.list = xwidget.NewPagedList(100, func() fyne.CanvasObject {
 			entry := custom_widget.NewContactEntry()
-
 			entry.AddContextMenuItem("Edit", theme.DocumentCreateIcon(), func() {
 				editAliasEntry := widget.NewEntry()
-				editAliasEntry.SetText(entry.GetModel().Alias)
+				editAliasEntry.SetText(entry.GetModel().Contact.Alias)
 				editAliasEntry.PlaceHolder = "type a contact name"
 				editAliasEntry.Validator = func(s string) error {
-					if s == entry.GetModel().Alias {
+					if s == entry.GetModel().Contact.Alias {
 						return nil
 					}
 					for _, item := range t.list.GetItems() {
-						contact := item.(*entity.Contact)
-						if contact.Alias == s {
+						contact := item.(*model.Contact)
+						if contact.Contact.Alias == s {
 							return errors.New("same alias already exists")
 						}
 					}
@@ -67,21 +68,21 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 				}
 
 				editAddressEntry := widget.NewEntry()
-				editAddressEntry.SetText(entry.GetModel().Address)
+				editAddressEntry.SetText(entry.GetModel().Contact.Address)
 				editAddressEntry.PlaceHolder = "type a nym-address"
 				editAddressEntry.Validator = func(s string) error {
 					if !NymAddrRegexp.MatchString(s) {
-						return errors.New("incorrect nym-address format (must be like a44.b44@c44)")
+						return errors.New("incorrect nym-address format (must be like a.b@c)")
 					}
 
-					if entry.GetModel().Address == s {
+					if entry.GetModel().Contact.Address == s {
 						return nil
 					}
 
 					for _, item := range t.list.GetItems() {
-						contact := item.(*entity.Contact)
-						if contact.Address == s {
-							return errors.New(fmt.Sprintf("this nym-address already belongs to %s", contact.Alias))
+						contact := item.(*model.Contact)
+						if contact.Contact.Address == s {
+							return errors.New(fmt.Sprintf("this nym-address already belongs to %s", contact.Contact.Alias))
 						}
 					}
 
@@ -101,14 +102,15 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 							return
 						}
 
-						if _, err := t.Controller.Contacts.Update(entry.GetModel().ID, editAddressEntry.Text, editAliasEntry.Text); err != nil {
+						contact, err := t.Controller.Contacts.Update(entry.GetModel().Contact.ID, editAddressEntry.Text, editAliasEntry.Text)
+						if err != nil {
 							dialog.ShowError(errors.Wrap(err, "Controller.Contacts.Update"), t.Window)
 							return
 						}
 
-						utils.ShowSplash(fmt.Sprintf("Contact %s is edited", entry.GetModel().Alias))
+						utils.ShowSplash(fmt.Sprintf("Contact %s is edited", entry.GetModel().Contact.Alias))
+						t.OnUpdateCallback(entry.GetModel(), contact)
 						t.list.Reload()
-						t.OnUpdate()
 					},
 					t.Window,
 				)
@@ -116,18 +118,20 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 				editForm.Show()
 			})
 			entry.AddContextMenuItem("Delete", theme.DeleteIcon(), func() {
-				if _, err := t.Controller.Contacts.Delete(entry.GetModel().ID); err != nil {
-					dialog.ShowError(errors.Wrapf(err, "Controller.Contacts.Delete %d", entry.GetModel().ID), t.Window)
+				contact, err := t.Controller.Contacts.Delete(entry.GetModel().Contact.ID)
+				if err != nil {
+					dialog.ShowError(errors.Wrapf(err, "Controller.Contacts.Delete %d", entry.GetModel().Contact.ID), t.Window)
 					return
 				}
-				utils.ShowSplash(fmt.Sprintf("Contact %s is deleted", entry.GetModel().Alias))
+				utils.ShowSplash(fmt.Sprintf("Contact %s is deleted", entry.GetModel().Contact.Alias))
+				t.OnDeleteCallback(contact)
 				t.list.Reload()
 			})
 			return entry
 		})
 		t.list.SetDataSourceFunc(t.dataSource)
 		t.list.SetUpdateItemFunc(func(id widget.ListItemID, object fyne.CanvasObject) {
-			contact := t.list.GetFilteredItems()[id].(*entity.Contact)
+			contact := t.list.GetFilteredItems()[id].(*model.Contact)
 			entry := object.(*custom_widget.ContactEntry)
 
 			entry.SetModel(contact)
@@ -135,7 +139,7 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 				t.list.Select(id)
 			}
 			entry.OnCopyButtonClick = func() {
-				if err := utils.CopyToClipboard(contact.Address); err != nil {
+				if err := utils.CopyToClipboard(contact.Contact.Address); err != nil {
 					dialog.ShowError(err, t.Window)
 					return
 				}
@@ -147,8 +151,8 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 		addAliasEntry.PlaceHolder = "type a contact name"
 		addAliasEntry.Validator = func(s string) error {
 			for _, item := range t.list.GetItems() {
-				contact := item.(*entity.Contact)
-				if contact.Alias == s {
+				contact := item.(*model.Contact)
+				if contact.Contact.Alias == s {
 					return errors.New("same alias already exists")
 				}
 			}
@@ -159,12 +163,12 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 		addAddressEntry.PlaceHolder = "type a nym-address"
 		addAddressEntry.Validator = func(s string) error {
 			if !NymAddrRegexp.MatchString(s) {
-				return errors.New("incorrect nym-address format (must be like a44.b44@c44)")
+				return errors.New("incorrect nym-address format (must be like a.b@c)")
 			}
 
 			for _, item := range t.list.GetItems() {
-				contact := item.(*entity.Contact)
-				if contact.Address == s {
+				contact := item.(*model.Contact)
+				if contact.Contact.Address == s {
 					return errors.New("same nym-address already exists")
 				}
 			}
@@ -185,14 +189,15 @@ func NewContactsTab(app fyne.App, controller *service.Service, window fyne.Windo
 					return
 				}
 
-				if _, err := t.Controller.Contacts.Create(t.model.Pseudonym.ID, addAddressEntry.Text, addAliasEntry.Text); err != nil {
+				contact, err := t.Controller.Contacts.Create(t.pseudonym.ID, addAddressEntry.Text, addAliasEntry.Text)
+				if err != nil {
 					dialog.ShowError(errors.Wrap(err, "Controller.Contacts.Create"), t.Window)
 					return
 				}
 
 				utils.ShowSplash(fmt.Sprintf("Contact %s is created", addAliasEntry.Text))
+				t.OnCreateCallback(contact)
 				t.list.Reload()
-				t.OnUpdate()
 			},
 			t.Window,
 		)
@@ -220,10 +225,14 @@ func (t *ContactsTab) Load() {
 	t.list.Reload()
 }
 
+func (t *ContactsTab) Unload() {
+	// TODO Delete all items in list
+}
+
 func (t *ContactsTab) dataSource() []any {
-	contacts, err := t.Controller.Contacts.GetAll(t.model.Pseudonym.ID)
+	contacts, err := t.Controller.Contacts.GetAll(t.pseudonym.ID)
 	if err != nil {
-		dialog.ShowError(errors.Wrapf(err, "Controller.Contacts.GetAll %d", t.model.Pseudonym.ID), t.Window)
+		dialog.ShowError(errors.Wrapf(err, "Controller.Contacts.GetAll %d", t.pseudonym.ID), t.Window)
 		return []any{}
 	}
 

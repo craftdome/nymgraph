@@ -2,8 +2,9 @@ package service
 
 import (
 	"database/sql"
-	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/Tyz3/nymgraph/internal/model"
 	"github.com/Tyz3/nymgraph/internal/repository"
+	"github.com/Tyz3/nymgraph/internal/repository/sqlite/pseudonyms"
 	"github.com/Tyz3/nymgraph/internal/repository/sqlite/received"
 	"github.com/Tyz3/nymgraph/internal/state"
 	"github.com/pkg/errors"
@@ -21,7 +22,7 @@ func NewReceivedService(repo *repository.Repository, state *state.State) *Receiv
 	}
 }
 
-func (s *ReceivedService) Create(pseudonymID int, text, senderTag string) (*entity.Received, error) {
+func (s *ReceivedService) Create(pseudonymID int, text, senderTag string) (*model.Received, error) {
 	dto := received.CreateDTO{
 		PseudonymID: pseudonymID,
 		Text:        text,
@@ -38,28 +39,62 @@ func (s *ReceivedService) Create(pseudonymID int, text, senderTag string) (*enti
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Received.Create %+v", dto)
 	}
-	return created, nil
+
+	dto2 := pseudonyms.GetDTO{ID: pseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	return &model.Received{
+		Received:  created,
+		Pseudonym: pseudonym,
+	}, nil
 }
 
-func (s *ReceivedService) Delete(id int) (*entity.Received, error) {
+func (s *ReceivedService) Delete(id int) (*model.Received, error) {
 	dto := received.DeleteDTO{
 		ID: id,
 	}
-	updated, err := s.repo.Received.Delete(dto)
+	deleted, err := s.repo.Received.Delete(dto)
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Received.Delete %+v", dto)
 	}
-	return updated, nil
+
+	dto2 := pseudonyms.GetDTO{ID: deleted.PseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	return &model.Received{
+		Received:  deleted,
+		Pseudonym: pseudonym,
+	}, nil
 }
 
-func (s *ReceivedService) GetAll(pseudonymID int) ([]*entity.Received, error) {
+func (s *ReceivedService) GetAll(pseudonymID int) ([]*model.Received, error) {
 	dto := received.GetAllDTO{PseudonymID: pseudonymID}
 	all, err := s.repo.Received.GetAll(dto)
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Received.GetAll %+v", dto)
 	}
 
-	return all, nil
+	dto2 := pseudonyms.GetDTO{ID: pseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	models := make([]*model.Received, 0, len(all))
+	for _, e := range all {
+		models = append(models, &model.Received{
+			Received:  e,
+			Pseudonym: pseudonym,
+		})
+	}
+
+	return models, nil
 }
 
 func (s *ReceivedService) Truncate() error {

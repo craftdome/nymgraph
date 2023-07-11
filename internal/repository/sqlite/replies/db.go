@@ -92,7 +92,7 @@ func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Reply, error) {
 }
 
 func (r *Repo) Truncate() error {
-	q := `TRUNCATE replies restart identity;`
+	q := `DELETE FROM replies;delete from sqlite_sequence where name='replies'`
 
 	if _, err := r.client.Exec(q); err != nil {
 		return errors.Wrapf(err, "Exec")

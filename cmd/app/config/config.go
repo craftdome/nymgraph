@@ -9,13 +9,10 @@ import (
 type Config struct {
 	configName string
 
-	UseProxy      bool   `yaml:"UseProxy"`
-	Proxy         string `yaml:"Proxy"`
-	TestProxySite string `yaml:"TestProxySite"`
-
-	NymClient struct {
-		Host string `yaml:"Server"`
-	} `yaml:"NymClient"`
+	UseProxy               bool   `yaml:"UseProxy"`
+	Proxy                  string `yaml:"Proxy"`
+	TestProxySite          string `yaml:"TestProxySite"`
+	DeleteHistoryAfterQuit bool   `yaml:"DeleteHistoryAfterQuit"`
 }
 
 func NewConfig(configName string) (*Config, error) {

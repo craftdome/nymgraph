@@ -15,19 +15,21 @@ func NewRepo(client client.Client) *Repo {
 }
 
 func (r *Repo) Create(dto CreateDTO) (*entity.Sent, error) {
-	q := `INSERT INTO sent (contact_id, text) 
-		VALUES ($1, $2) 
-		RETURNING id, contact_id, create_at, text;`
+	q := `INSERT INTO sent (contact_id, text, reply_surbs) 
+		VALUES ($1, $2, $3) 
+		RETURNING id, contact_id, create_at, text, reply_surbs;`
 
 	result := new(Entity)
 	err := r.client.QueryRow(q,
 		dto.ContactID,
 		dto.Text,
+		dto.ReplySurbs,
 	).Scan(
 		&result.ID,
 		&result.ContactID,
 		&result.CreateAt,
 		&result.Text,
+		&result.ReplySurbs,
 	)
 
 	if err != nil {
@@ -40,7 +42,7 @@ func (r *Repo) Create(dto CreateDTO) (*entity.Sent, error) {
 func (r *Repo) Delete(dto DeleteDTO) (*entity.Sent, error) {
 	q := `DELETE FROM sent 
 		WHERE id = $1 
-		RETURNING id, contact_id, create_at, text;`
+		RETURNING id, contact_id, create_at, text, reply_surbs;`
 
 	result := new(Entity)
 	err := r.client.QueryRow(q,
@@ -50,6 +52,7 @@ func (r *Repo) Delete(dto DeleteDTO) (*entity.Sent, error) {
 		&result.ContactID,
 		&result.CreateAt,
 		&result.Text,
+		&result.ReplySurbs,
 	)
 
 	if err != nil {
@@ -60,7 +63,7 @@ func (r *Repo) Delete(dto DeleteDTO) (*entity.Sent, error) {
 }
 
 func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Sent, error) {
-	q := `SELECT id, contact_id, create_at, text 
+	q := `SELECT id, contact_id, create_at, text, reply_surbs 
 		FROM sent 
 		WHERE contact_id = $1 
 		ORDER BY id;`
@@ -79,6 +82,7 @@ func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Sent, error) {
 			&result.ContactID,
 			&result.CreateAt,
 			&result.Text,
+			&result.ReplySurbs,
 		)
 
 		if err != nil {
@@ -92,7 +96,7 @@ func (r *Repo) GetAll(dto GetAllDTO) ([]*entity.Sent, error) {
 }
 
 func (r *Repo) Truncate() error {
-	q := `TRUNCATE sent restart identity;`
+	q := `DELETE FROM sent;delete from sqlite_sequence where name='sent'`
 
 	if _, err := r.client.Exec(q); err != nil {
 		return errors.Wrapf(err, "Exec")

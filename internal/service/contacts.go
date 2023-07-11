@@ -1,9 +1,10 @@
 package service
 
 import (
-	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/Tyz3/nymgraph/internal/model"
 	"github.com/Tyz3/nymgraph/internal/repository"
 	"github.com/Tyz3/nymgraph/internal/repository/sqlite/contacts"
+	"github.com/Tyz3/nymgraph/internal/repository/sqlite/pseudonyms"
 	"github.com/Tyz3/nymgraph/internal/state"
 	"github.com/pkg/errors"
 )
@@ -20,7 +21,7 @@ func NewContactsController(repo *repository.Repository, state *state.State) *Con
 	}
 }
 
-func (s *ContactsService) Create(pseudonymID int, addr, alias string) (*entity.Contact, error) {
+func (s *ContactsService) Create(pseudonymID int, addr, alias string) (*model.Contact, error) {
 	dto := contacts.CreateDTO{
 		PseudonymID: pseudonymID,
 		Address:     addr,
@@ -30,10 +31,20 @@ func (s *ContactsService) Create(pseudonymID int, addr, alias string) (*entity.C
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Contacts.Create %+v", dto)
 	}
-	return created, nil
+
+	dto2 := pseudonyms.GetDTO{ID: pseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	return &model.Contact{
+		Contact:   created,
+		Pseudonym: pseudonym,
+	}, nil
 }
 
-func (s *ContactsService) Update(id int, addr, alias string) (*entity.Contact, error) {
+func (s *ContactsService) Update(id int, addr, alias string) (*model.Contact, error) {
 	dto := contacts.UpdateDTO{
 		ID:      id,
 		Address: addr,
@@ -43,26 +54,60 @@ func (s *ContactsService) Update(id int, addr, alias string) (*entity.Contact, e
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Contacts.Update %+v", dto)
 	}
-	return updated, nil
+
+	dto2 := pseudonyms.GetDTO{ID: updated.PseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	return &model.Contact{
+		Contact:   updated,
+		Pseudonym: pseudonym,
+	}, nil
 }
 
-func (s *ContactsService) Delete(id int) (*entity.Contact, error) {
+func (s *ContactsService) Delete(id int) (*model.Contact, error) {
 	dto := contacts.DeleteDTO{
 		ID: id,
 	}
-	updated, err := s.repo.Contacts.Delete(dto)
+	deleted, err := s.repo.Contacts.Delete(dto)
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Contacts.Delete %+v", dto)
 	}
-	return updated, nil
+
+	dto2 := pseudonyms.GetDTO{ID: deleted.PseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	return &model.Contact{
+		Contact:   deleted,
+		Pseudonym: pseudonym,
+	}, nil
 }
 
-func (s *ContactsService) GetAll(pseudonymID int) ([]*entity.Contact, error) {
+func (s *ContactsService) GetAll(pseudonymID int) ([]*model.Contact, error) {
 	dto := contacts.GetAllDTO{PseudonymID: pseudonymID}
 	all, err := s.repo.Contacts.GetAll(dto)
 	if err != nil {
 		return nil, errors.Wrapf(err, "repo.Contacts.GetAll %+v", dto)
 	}
 
-	return all, nil
+	dto2 := pseudonyms.GetDTO{ID: pseudonymID}
+	pseudonym, err := s.repo.Pseudonyms.Get(dto2)
+	if err != nil {
+		return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto2)
+	}
+
+	models := make([]*model.Contact, 0, len(all))
+	for _, e := range all {
+		models = append(models, &model.Contact{
+			Contact:   e,
+			Pseudonym: pseudonym,
+		})
+	}
+
+	return models, nil
 }

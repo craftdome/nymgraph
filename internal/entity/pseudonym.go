@@ -12,6 +12,6 @@ func (e *Pseudonym) DSN() string {
 	return fmt.Sprintf("ws://%s", e.Server)
 }
 
-func (e *Pseudonym) DataChanged() {
-
+func (e *Pseudonym) Pretty() string {
+	return fmt.Sprintf("%s (%s)", e.Name, e.Server)
 }

@@ -8,7 +8,7 @@ import (
 type Entity struct {
 	ID         int
 	ReceivedID int
-	CreateAt   time.Time
+	CreateAt   int64
 	Text       string
 }
 
@@ -16,7 +16,7 @@ func (e *Entity) ToDomain() *entity.Reply {
 	return &entity.Reply{
 		ID:         e.ID,
 		ReceivedID: e.ReceivedID,
-		CreateAt:   e.CreateAt,
+		CreateAt:   time.Unix(e.CreateAt, 0),
 		Text:       e.Text,
 	}
 }

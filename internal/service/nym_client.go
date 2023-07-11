@@ -20,5 +20,5 @@ func NewNymClientController(repo *repository.Repository, state *state.State) *Ny
 }
 
 func (s *NymClientService) New(pseudonym *entity.Pseudonym) *nym_client.ClientConnect {
-	return nym_client.NewClientConnect(s.repo, pseudonym.DSN())
+	return nym_client.NewClientConnect(pseudonym.DSN())
 }

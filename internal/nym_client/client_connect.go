@@ -4,7 +4,6 @@ import (
 	"github.com/Tyz3/go-nym"
 	"github.com/Tyz3/go-nym/response"
 	"github.com/Tyz3/go-nym/tags"
-	"github.com/Tyz3/nymgraph/internal/repository"
 	"github.com/pkg/errors"
 )
 
@@ -17,7 +16,6 @@ const (
 )
 
 type ClientConnect struct {
-	repo   *repository.Repository
 	client *nym.Client
 
 	selfAddress     string
@@ -30,10 +28,9 @@ type ClientConnect struct {
 	OnCloseCallback       func()
 }
 
-func NewClientConnect(repo *repository.Repository, dsn string) *ClientConnect {
+func NewClientConnect(dsn string) *ClientConnect {
 	c := &ClientConnect{
-		repo: repo,
-		dsn:  dsn,
+		dsn: dsn,
 
 		OnErrorCallback:       func(*response.Error) {},
 		OnSelfAddressCallback: func(*response.SelfAddress) {},
@@ -146,79 +143,3 @@ func (c *ClientConnect) SendReply(text, senderTag string) error {
 
 	return nil
 }
-
-//func (c *ClientConnect) SendReply(receivedID int, text string) (*model.Reply, error) {
-//	dto := received.GetDTO{ID: receivedID}
-//	rec, err := c.repo.Received.Get(dto)
-//	if err != nil {
-//		return nil, errors.Wrapf(err, "repo.Received.Get %+v", dto)
-//	}
-//
-//	if rec.SenderTag == "" {
-//		return nil, errors.Wrapf(ErrNoSenderTag, "receivedID %d", receivedID)
-//	}
-//
-//	req := nym.NewReply(text, rec.SenderTag)
-//	// Отправляем сообщение в nym-client
-//	if err := c.client.SendRequestAsText(req); err != nil {
-//		return nil, errors.Wrap(err, "client.SendRequestAsText")
-//	}
-//
-//	dto2 := replies.CreateDTO{
-//		ReceivedID: receivedID,
-//		Text:       text,
-//	}
-//
-//	if reply, err := c.repo.Replies.Create(dto2); err != nil {
-//		return nil, errors.Wrapf(err, "repo.Replies.Create %+v", dto2)
-//	} else {
-//		dto3 := pseudonyms.GetDTO{ID: rec.PseudonymID}
-//		ps, err := c.repo.Pseudonyms.Get(dto3)
-//		if err != nil {
-//			return nil, errors.Wrapf(err, "repo.Pseudonyms.Get %+v", dto3)
-//		}
-//
-//		return &model.Reply{
-//			Reply: reply,
-//			Received: &model.Received{
-//				Received:  rec,
-//				Pseudonym: ps,
-//			},
-//		}, nil
-//	}
-//}
-//
-//func (c *ClientConnect) SendMessageToContact(contactID int, text string, replySURBs int) (*model.Sent, error) {
-//	dto := contacts.GetDTO{ID: contactID}
-//	contact, err := c.repo.Contacts.Get(dto)
-//	if err != nil {
-//		return nil, errors.Wrapf(err, "repo.Contacts.Get %+v", dto)
-//	}
-//
-//	var req nym.Request
-//	if replySURBs != 0 {
-//		req = nym.NewSendAnonymous(text, contact.Address, replySURBs)
-//	} else {
-//		req = nym.NewSend(text, contact.Address)
-//	}
-//
-//	// Отправляем сообщение в nym-client
-//	if err := c.client.SendRequestAsText(req); err != nil {
-//		return nil, errors.Wrap(err, "client.SendRequestAsText")
-//	}
-//
-//	dto2 := sent.CreateDTO{
-//		Text:      text,
-//		ContactID: contactID,
-//	}
-//
-//	// Добавляем сообщение в БД (контакт ID не указывается)
-//	if msg, err := c.repo.Sent.Create(dto2); err != nil {
-//		return nil, errors.Wrapf(err, "repo.OutcomingMessages.Create %+v", dto)
-//	} else {
-//		return &model.Sent{
-//			Sent:    msg,
-//			Contact: contact,
-//		}, nil
-//	}
-//}

@@ -7,13 +7,13 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/Tyz3/fyne-extra/xwidget"
-	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/Tyz3/nymgraph/internal/model"
 )
 
 type ContactEntry struct {
 	widget.BaseWidget
 
-	model *entity.Contact
+	model *model.Contact
 
 	contextMenu *fyne.Menu
 
@@ -74,15 +74,15 @@ func NewContactEntry() *ContactEntry {
 	return w
 }
 
-func (w *ContactEntry) GetModel() *entity.Contact {
+func (w *ContactEntry) GetModel() *model.Contact {
 	return w.model
 }
 
-func (w *ContactEntry) SetModel(model *entity.Contact) {
+func (w *ContactEntry) SetModel(model *model.Contact) {
 	w.model = model
 
-	w.aliasLabel.SetText(w.model.Alias)
-	w.addressLabel.SetText(w.model.Address[:21] + "...")
+	w.aliasLabel.SetText(w.model.Contact.Alias)
+	w.addressLabel.SetText(w.model.Contact.Address[:21] + "...")
 }
 
 func (w *ContactEntry) AddContextMenuItem(label string, icon fyne.Resource, action func()) {
