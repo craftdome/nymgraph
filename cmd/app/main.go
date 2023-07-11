@@ -7,18 +7,15 @@ import (
 	"github.com/Tyz3/nymgraph/internal/state"
 	"github.com/Tyz3/nymgraph/internal/view"
 	"github.com/Tyz3/nymgraph/pkg/client/sqlite3"
-	"github.com/Tyz3/nymgraph/pkg/logger"
 	"github.com/Tyz3/nymgraph/pkg/utils"
 )
 
 func init() {
 	if err := utils.SaveResource(config.CfgFileName, config.CfgBin); err != nil {
-		logger.Log.ERROR.Printf("%s\n", err)
-		return
+		panic(err)
 	}
 	if err := utils.SaveResource(config.DataDBFileName, config.DataDBBin); err != nil {
-		logger.Log.ERROR.Printf("%s\n", err)
-		return
+		panic(err)
 	}
 }
 
@@ -26,8 +23,7 @@ func main() {
 	// Конфигурация
 	cfg, err := config.NewConfig(config.CfgFileName)
 	if err != nil {
-		logger.Log.ERROR.Printf("%s\n", err)
-		return
+		panic(err)
 	}
 
 	// Текущие состояния приложения
@@ -36,8 +32,7 @@ func main() {
 	// Клиент подключения к БД
 	client, err := sqlite3.NewClient(sqlite3.Config{DBFileName: "data.db"})
 	if err != nil {
-		logger.Log.ERROR.Printf("%s\n", err)
-		return
+		panic(err)
 	}
 
 	// Инициализация репозитория
