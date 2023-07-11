@@ -81,6 +81,7 @@ func NewChatTab(app fyne.App, controller *service.Service, window fyne.Window, t
 		t.replySurbsEntry.Wrapping = fyne.TextWrapOff
 		t.replySurbsEntry.Validator = func(s string) (err error) {
 			if s == "" {
+				t.sentModel.Sent.ReplySurbs = 0
 				return nil
 			}
 			if i, err := strconv.Atoi(s); err != nil {
