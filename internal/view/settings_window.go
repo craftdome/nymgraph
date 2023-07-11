@@ -35,7 +35,6 @@ type SettingsWindow struct {
 	deleteHistoryAfterQuitCheck *widget.Check
 	useProxyCheck               *widget.Check
 	proxyCredentialsEntry       *widget.Entry
-	connectButton               *widget.Button
 
 	OnUpdate func(*entity.Pseudonym)
 	OnCreate func(*entity.Pseudonym)
@@ -115,7 +114,6 @@ func NewSettingsWindow(controller *service.Service, app fyne.App, title string, 
 						}
 						w.list.Reload()
 						w.list.UnselectAll()
-						w.connectButton.Disable()
 						w.OnDelete(deleted)
 					},
 					w.Window,

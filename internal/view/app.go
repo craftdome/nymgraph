@@ -28,8 +28,9 @@ type App struct {
 	pseudonyms []*entity.Pseudonym
 	menu       *fyne.Menu
 
-	openedChats map[string]*HomeWindow
-	mu          sync.Mutex
+	settingsWindow *SettingsWindow
+	openedChats    map[string]*HomeWindow
+	mu             sync.Mutex
 }
 
 func NewApp(appName string, controller *service.Service) *App {
@@ -80,32 +81,63 @@ func (a *App) Close() {
 
 func (a *App) Load() {
 	settItem := fyne.NewMenuItem("Settings", func() {
-		w := NewSettingsWindow(a.controller, a.app, "Settings", theme.SettingsIcon())
-		w.Window.Show()
-		w.Load()
-		w.Window.SetCloseIntercept(func() {
-			w.Unload()
-			w.Window.Close()
+		if a.settingsWindow == nil {
+			a.settingsWindow = NewSettingsWindow(a.controller, a.app, "Settings", theme.SettingsIcon())
+			a.settingsWindow.Window.Show()
+			a.settingsWindow.Load()
+		} else {
+			a.settingsWindow.Window.RequestFocus()
+		}
+
+		a.settingsWindow.Window.SetCloseIntercept(func() {
+			a.settingsWindow.Unload()
+			a.settingsWindow.Window.Close()
+			a.settingsWindow = nil
 		})
-		w.OnCreate = func(pseudonym *entity.Pseudonym) {
-			w.pseudonyms = append(w.pseudonyms, pseudonym)
+		a.settingsWindow.OnCreate = func(pseudonym *entity.Pseudonym) {
+			a.pseudonyms = append(a.pseudonyms, pseudonym)
+			a.update()
 		}
-		w.OnUpdate = func(pseudonym *entity.Pseudonym) {
-			for i, p := range w.pseudonyms {
+		a.settingsWindow.OnUpdate = func(pseudonym *entity.Pseudonym) {
+			for i, p := range a.pseudonyms {
 				if p.ID == pseudonym.ID {
-					w.pseudonyms[i].Name = pseudonym.Name
-					w.pseudonyms[i].Server = pseudonym.Server
+					a.pseudonyms[i].Name = pseudonym.Name
+					a.pseudonyms[i].Server = pseudonym.Server
+					openedChat := a.openedChats[pseudonym.Name]
+					a.mu.Lock()
+					delete(a.openedChats, pseudonym.Name)
+					openedChat.Close()
+					for i, mi := range a.menu.Items {
+						if mi == openedChat.menuItem {
+							a.menu.Items = append(a.menu.Items[:i], a.menu.Items[i+1:]...)
+							break
+						}
+					}
+					a.mu.Unlock()
 					break
 				}
 			}
+			a.update()
 		}
-		w.OnDelete = func(pseudonym *entity.Pseudonym) {
-			for i, p := range w.pseudonyms {
+		a.settingsWindow.OnDelete = func(pseudonym *entity.Pseudonym) {
+			for i, p := range a.pseudonyms {
 				if p.ID == pseudonym.ID {
-					w.pseudonyms = append(w.pseudonyms[:i], w.pseudonyms[i+1:]...)
+					a.pseudonyms = append(a.pseudonyms[:i], a.pseudonyms[i+1:]...)
 					break
 				}
 			}
+			openedChat := a.openedChats[pseudonym.Name]
+			a.mu.Lock()
+			delete(a.openedChats, pseudonym.Name)
+			openedChat.Close()
+			for i, mi := range a.menu.Items {
+				if mi == openedChat.menuItem {
+					a.menu.Items = append(a.menu.Items[:i], a.menu.Items[i+1:]...)
+					break
+				}
+			}
+			a.mu.Unlock()
+			a.update()
 		}
 	})
 	settItem.Icon = theme.SettingsIcon()
