@@ -1,6 +1,12 @@
 # Nymgraph
 A graphical chat client for NYM (nym-client)
 
+## Developer's mixnodes
+
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.identity_key&style=plastic&logo=numpy&logoColor=white&label=Advanced%20Engineering%201&color=%23136401&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=stake_saturation&style=plastic&logo=myspace&logoColor=white&label=Stake&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.version&style=plastic&logo=git&logoColor=white&label=Version&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
+
 # Compiling from source (Ubuntu & Debian (amd64))
 ## Step 1. Installing Golang
 1. Visit the official page [go.dev](https://go.dev/doc/install) to download and install Go.
@@ -20,7 +26,7 @@ export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig
 
 1. Clonning nymgraph project via git clone.
 ```sh
-git clone https://github.com/Tyz3/nymgraph.git && cd nymgraph
+git clone https://github.com/craftdome/nymgraph.git && cd nymgraph
 ```
 
 2. Syncronize go dependencies (downloading all imports)
@@ -30,7 +36,7 @@ go mod tidy
 
 3. Compiling to output dir `./bin`.
 ```sh
-CGO_ENABLED=1 go build -o ./bin/nymgraph-amd64 -ldflags="-s -w" -trimpath github.com/Tyz3/nymgraph/cmd/app
+CGO_ENABLED=1 go build -o ./bin/nymgraph-amd64 -ldflags="-s -w" -trimpath github.com/craftdome/nymgraph/cmd/app
 ```
 
 4. Run a result.
