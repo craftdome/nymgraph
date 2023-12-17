@@ -1,52 +1,15 @@
-# Nymgraph
-A graphical chat client for NYM (nym-client)
+![GitHub go.mod Go version (subdirectory of monorepo)](https://img.shields.io/github/go-mod/go-version/craftdome/nymgraph?style=flat-square)
+![GitHub release (with filter)](https://img.shields.io/github/v/release/craftdome/nymgraph?style=flat-square)
 
-## Developer's mixnodes
+# About
+Graphical chat client for messaging via mixnet.
 
-[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.identity_key&style=plastic&logo=numpy&logoColor=white&label=Advanced%20Engineering%201&color=%23136401&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
-[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=stake_saturation&style=plastic&logo=myspace&logoColor=white&label=Stake&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
-[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.version&style=plastic&logo=git&logoColor=white&label=Version&cacheSeconds=60&link=https%3A%2F%2Fexplorer.nymtech.net%2Fnetwork-components%2Fmixnode%2F895)](https://explorer.nymtech.net/network-components/mixnode/895)
+# Usage requirements
 
-# Compiling from source (Ubuntu & Debian (amd64))
-## Step 1. Installing Golang
-1. Visit the official page [go.dev](https://go.dev/doc/install) to download and install Go.
+1. The Nymgraph requires a running nym-client. The simple download, install and launch of the nym-client is described in the official docs -> [link](https://nimtech.net/docs/clients/overview.html#the-websocket-client)
+2. Windows 10-11 or Linux OS and AMD64 arch.
 
-## Step 2. Installing the required packages for compilation
-1. Packages.
-```bash
-apt install git build-essential libxinerama-dev libgl1-mesa-dev xorg-dev libx11-dev pkg-config
-```
-
-2. Setting up PKG_CONFIG_PATH for pkgconfig dir.
-```sh
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/lib/pkgconfig
-```
-
-## Step 3. Download and compile nymgraph
-
-1. Clonning nymgraph project via git clone.
-```sh
-git clone https://github.com/craftdome/nymgraph.git && cd nymgraph
-```
-
-2. Syncronize go dependencies (downloading all imports)
-```sh
-go mod tidy
-```
-
-3. Compiling to output dir `./bin`.
-```sh
-CGO_ENABLED=1 go build -o ./bin/nymgraph-amd64 -ldflags="-s -w" -trimpath github.com/craftdome/nymgraph/cmd/app
-```
-
-4. Run a result.
-
-![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/2ce9e4f1-117f-4475-992f-e8d90f3bc7a1)
-
-![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/a0f9b6b3-fb9b-4ef3-b85c-c905b47fd725)
-
-
-# Screenshots (Windows 11)
+## Screenshots (Windows 11)
 
 ![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/b36347f8-c673-4bec-a79b-32eed22b7115) 
 
@@ -54,3 +17,17 @@ CGO_ENABLED=1 go build -o ./bin/nymgraph-amd64 -ldflags="-s -w" -trimpath github
 |---|---|
 |![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/2f7595c0-35c9-4817-909d-9c9099245f6d)|![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/cc16fd7d-0edf-42b2-a943-7065796419fa)|
 |![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/501f5e6d-aa6c-4f14-9e19-f99c5f874477)|![изображение](https://github.com/Tyz3/nymgraph/assets/21179689/a60516b4-aa3d-477f-a24d-56fe648e55ed)|
+
+# Support the developer (Mixnodes)
+
+Below is a list of the developer's mixnodes. If you are looking for a node for delegating tokens, you can take a closer look at my options. The node owner's commission is only 4%, which is a low indicator among other nodes, where the commission can reach up to 20%, or even higher, if you add the node operating cost (sometimes there are 4000 tokens - this is about 28% of the maximum profitability of the node).
+
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.identity_key&style=flat-square&logo=numpy&logoColor=white&label=Advanced%20Engineering%201&color=%23136401&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/895)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=stake_saturation&style=flat-square&logo=myspace&logoColor=white&label=Stake&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/895)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=profit_margin_percent&style=flat-square&logo=buymeacoffee&logoColor=white&label=Owner%20Profit)](https://explorer.nymtech.net/network-components/mixnode/895)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F895&query=mix_node.version&style=flat-square&logo=git&logoColor=white&label=Version&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/895)
+
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F1227&query=mix_node.identity_key&style=flat-square&logo=numpy&logoColor=white&label=Advanced%20Engineering%202&color=%23136401&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/1227)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F1227&query=stake_saturation&style=flat-square&logo=myspace&logoColor=white&label=Stake&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/1227)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F1227&query=profit_margin_percent&style=flat-square&logo=buymeacoffee&logoColor=white&label=Owner%20Profit)](https://explorer.nymtech.net/network-components/mixnode/1227)
+[![Dynamic JSON Badge](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fexplorer.nymtech.net%2Fapi%2Fv1%2Fmix-node%2F1227&query=mix_node.version&style=flat-square&logo=git&logoColor=white&label=Version&cacheSeconds=60)](https://explorer.nymtech.net/network-components/mixnode/1227)
