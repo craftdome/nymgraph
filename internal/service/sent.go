@@ -1,11 +1,11 @@
 package service
 
 import (
-	"github.com/Tyz3/nymgraph/internal/model"
-	"github.com/Tyz3/nymgraph/internal/repository"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/contacts"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/sent"
-	"github.com/Tyz3/nymgraph/internal/state"
+	"github.com/craftdome/nymgraph/internal/model"
+	"github.com/craftdome/nymgraph/internal/repository"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/contacts"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/sent"
+	"github.com/craftdome/nymgraph/internal/state"
 	"github.com/pkg/errors"
 )
 

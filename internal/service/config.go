@@ -1,6 +1,6 @@
 package service
 
-import "github.com/Tyz3/nymgraph/internal/state"
+import "github.com/craftdome/nymgraph/internal/state"
 
 type ConfigService struct {
 	state *state.State

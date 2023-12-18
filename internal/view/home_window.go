@@ -6,12 +6,12 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/Tyz3/go-nym/response"
-	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/internal/model"
-	"github.com/Tyz3/nymgraph/internal/nym_client"
-	"github.com/Tyz3/nymgraph/internal/service"
-	"github.com/Tyz3/nymgraph/pkg/utils"
+	"github.com/craftdome/go-nym/response"
+	"github.com/craftdome/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/internal/model"
+	"github.com/craftdome/nymgraph/internal/nym_client"
+	"github.com/craftdome/nymgraph/internal/service"
+	"github.com/craftdome/nymgraph/pkg/utils"
 )
 
 type HomeWindow struct {

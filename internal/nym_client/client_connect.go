@@ -1,9 +1,9 @@
 package nym_client
 
 import (
-	"github.com/Tyz3/go-nym"
-	"github.com/Tyz3/go-nym/response"
-	"github.com/Tyz3/go-nym/tags"
+	"github.com/craftdome/go-nym"
+	"github.com/craftdome/go-nym/response"
+	"github.com/craftdome/go-nym/tags"
 	"github.com/pkg/errors"
 )
 

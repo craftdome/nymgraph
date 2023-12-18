@@ -1,10 +1,10 @@
 package service
 
 import (
-	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/internal/nym_client"
-	"github.com/Tyz3/nymgraph/internal/repository"
-	"github.com/Tyz3/nymgraph/internal/state"
+	"github.com/craftdome/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/internal/nym_client"
+	"github.com/craftdome/nymgraph/internal/repository"
+	"github.com/craftdome/nymgraph/internal/state"
 )
 
 type NymClientService struct {

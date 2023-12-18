@@ -6,8 +6,8 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
-	"github.com/Tyz3/fyne-extra/xwidget"
-	"github.com/Tyz3/nymgraph/internal/model"
+	"github.com/craftdome/nymgraph/internal/model"
+	"github.com/craftdome/nymgraph/pkg/fyne-extra/xwidget"
 )
 
 type ContactEntry struct {

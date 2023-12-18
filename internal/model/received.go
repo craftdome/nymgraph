@@ -1,6 +1,6 @@
 package model
 
-import "github.com/Tyz3/nymgraph/internal/entity"
+import "github.com/craftdome/nymgraph/internal/entity"
 
 type Received struct {
 	Received  *entity.Received

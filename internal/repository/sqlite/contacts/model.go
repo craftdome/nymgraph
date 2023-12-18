@@ -2,7 +2,7 @@ package contacts
 
 import (
 	"database/sql"
-	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/internal/entity"
 )
 
 type Entity struct {

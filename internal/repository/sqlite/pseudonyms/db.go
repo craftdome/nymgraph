@@ -1,8 +1,8 @@
 package pseudonyms
 
 import (
-	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/pkg/client"
+	"github.com/craftdome/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/pkg/client"
 	"github.com/pkg/errors"
 )
 

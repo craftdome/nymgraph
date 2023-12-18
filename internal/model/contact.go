@@ -2,7 +2,7 @@ package model
 
 import (
 	"fmt"
-	"github.com/Tyz3/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/internal/entity"
 )
 
 type Contact struct {

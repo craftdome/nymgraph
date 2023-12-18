@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/Tyz3/nymgraph/cmd/app/config"
+	"github.com/craftdome/nymgraph/cmd/app/config"
 )
 
 type State struct {

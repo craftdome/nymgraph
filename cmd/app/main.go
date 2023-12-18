@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/Tyz3/nymgraph/cmd/app/config"
-	"github.com/Tyz3/nymgraph/internal/repository"
-	"github.com/Tyz3/nymgraph/internal/service"
-	"github.com/Tyz3/nymgraph/internal/state"
-	"github.com/Tyz3/nymgraph/internal/view"
-	"github.com/Tyz3/nymgraph/pkg/client/sqlite3"
-	"github.com/Tyz3/nymgraph/pkg/utils"
+	"github.com/craftdome/nymgraph/cmd/app/config"
+	"github.com/craftdome/nymgraph/internal/repository"
+	"github.com/craftdome/nymgraph/internal/service"
+	"github.com/craftdome/nymgraph/internal/state"
+	"github.com/craftdome/nymgraph/internal/view"
+	"github.com/craftdome/nymgraph/pkg/client/sqlite3"
+	"github.com/craftdome/nymgraph/pkg/utils"
 )
 
 func init() {

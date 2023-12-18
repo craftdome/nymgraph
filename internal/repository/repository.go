@@ -1,13 +1,13 @@
 package repository
 
 import (
-	"github.com/Tyz3/nymgraph/internal/entity"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/contacts"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/pseudonyms"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/received"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/replies"
-	"github.com/Tyz3/nymgraph/internal/repository/sqlite/sent"
-	"github.com/Tyz3/nymgraph/pkg/client"
+	"github.com/craftdome/nymgraph/internal/entity"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/contacts"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/pseudonyms"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/received"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/replies"
+	"github.com/craftdome/nymgraph/internal/repository/sqlite/sent"
+	"github.com/craftdome/nymgraph/pkg/client"
 )
 
 type Pseudonyms interface {

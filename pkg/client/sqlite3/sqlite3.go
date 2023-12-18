@@ -3,9 +3,9 @@ package sqlite3
 import (
 	"database/sql"
 	"fmt"
-	"github.com/Tyz3/nymgraph/pkg/client"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/craftdome/nymgraph/pkg/client"
 	"github.com/pkg/errors"
+	_ "modernc.org/sqlite"
 )
 
 type Config struct {
@@ -24,9 +24,9 @@ func (c Config) String() string {
 }
 
 func NewClient(cfg Config) (client.Client, error) {
-	db, err := sql.Open("sqlite3", cfg.DSN())
+	db, err := sql.Open("sqlite", cfg.DSN())
 	if err != nil {
-		return nil, errors.Wrapf(err, "sql.Open(\"sqlite3\", %s)", cfg.DSN())
+		return nil, errors.Wrapf(err, "sql.Open(\"sqlite\", %s)", cfg.DSN())
 	}
 
 	if err = db.Ping(); err != nil {
