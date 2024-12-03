@@ -6,7 +6,7 @@ Graphical chat client for messaging via mixnet.
 
 # Usage requirements
 
-1. The Nymgraph requires a running nym-client. The simple download, install and launch of the nym-client is described in the official docs -> [link](https://nymtech.net/docs/clients/overview.html#the-websocket-client)
+1. The Nymgraph requires a running nym-client. The simple download, install and launch of the nym-client is described in the official docs -> [link]([https://nymtech.net/docs/clients/overview.html#the-websocket-client](https://nymtech.net/docs/developers/clients/websocket))
 2. Windows 10-11 or Linux OS and AMD64 arch.
 
 ## Screenshots (Windows 11)
